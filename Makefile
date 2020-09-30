@@ -9,15 +9,15 @@ vm_def.xml:
 start: vm_def.xml RainFall.iso ## start the vm and print its IP
 	sudo virsh create ./vm_def.xml
 	sudo virsh list
-	sudo virsh net-dhcp-leases default
+	@$(MAKE) ip
 
 ip: ## Prints the ip
-	sudo virsh net-dhcp-leases default | grep RainFall
+	sudo virsh net-dhcp-leases default | grep RainFall || echo "VM doesn't have an IP (yet ?)"
 
-shutdown: ## shutdown and delete vm
-	sudo virsh shutdown rainfall
+#shutdown: ## shutdown and delete vm
+#	sudo virsh shutdown rainfall
 
-shutdown-force: ## quick shutdown & delete vm
+shutdown: ## quick shutdown & delete vm
 	sudo virsh destroy rainfall
 
 list-vm: ## To see if the vm is running
@@ -32,7 +32,7 @@ else
 	@echo 'Nothing to be done here !'
 endif
 
-clean: shutdown-force ##
+clean: shutdown ##
 	rm -f RainFall.iso vm_def.xml
 
 help: ## Show this help.
