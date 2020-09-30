@@ -1,5 +1,8 @@
 .PHONY: start shutdown shutdown-force network clean help ip
 
+header:
+	toilet -w 9999 -f mono12 'level X'
+
 RainFall.iso:
 	./bin/fetch_iso.sh
 
