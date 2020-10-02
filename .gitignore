@@ -1,2 +1,3 @@
 *.iso
 /vm_def.xml
+/executables

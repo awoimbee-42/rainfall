@@ -1,13 +1,33 @@
-.PHONY: start shutdown shutdown-force network clean help ip
-
-header:
-	toilet -w 9999 -f mono12 'level X'
-
 RainFall.iso:
 	./bin/fetch_iso.sh
 
 vm_def.xml:
 	sed "s|%%RAINFALL_ISO%%|$${PWD}/RainFall.iso|" bin/vm_def.xml > $@
+
+define dl_exe_from_vm
+	pass=$$(cat ./$(1)$$(expr $(2) - 1)/flag || echo level0)	\
+	&& echo "user: '$(1)$(2)'  pass: '$$pass'" \
+	&& sshpass -p "$$pass" rsync -r --progress -e 'ssh -p 4242' '$(1)$(2)@192.168.122.237:~/*' "$(3)"
+endef
+
+executables: $(wildcard level*/flag) $(wildcard bonus*/flag)
+	mkdir e_tmp 2>/dev/null || rm -rf e_tmp && mkdir e_tmp
+	$(call dl_exe_from_vm,level,0,e_tmp)
+	$(call dl_exe_from_vm,level,1,e_tmp)
+	$(call dl_exe_from_vm,level,2,e_tmp)
+	# $(call dl_exe_from_vm,level,3,e_tmp)
+	# $(call dl_exe_from_vm,level,4,e_tmp)
+	# $(call dl_exe_from_vm,level,5,e_tmp)
+	# $(call dl_exe_from_vm,level,6,e_tmp)
+	# $(call dl_exe_from_vm,level,7,e_tmp)
+	# $(call dl_exe_from_vm,level,8,e_tmp)
+	# $(call dl_exe_from_vm,level,9,e_tmp)
+	mv e_tmp executables
+
+.PHONY:	header start ip stop shutdown shutdown-hard list-vm network clean fclean help
+
+header:
+	toilet -w 9999 -f mono12 'level X'
 
 start: vm_def.xml RainFall.iso ## start the vm and print its IP
 	sudo virsh create ./vm_def.xml
@@ -17,10 +37,12 @@ start: vm_def.xml RainFall.iso ## start the vm and print its IP
 ip: ## Prints the ip
 	sudo virsh net-dhcp-leases default | grep RainFall || echo "VM doesn't have an IP (yet ?)"
 
-#shutdown: ## shutdown and delete vm
+stop: shutdown ## shutdown alias
+
+shutdown: shutdown-hard ## shutdown and delete vm
 #	sudo virsh shutdown rainfall
 
-shutdown: ## quick shutdown & delete vm
+shutdown-hard:
 	sudo virsh destroy rainfall
 
 list-vm: ## To see if the vm is running
@@ -36,7 +58,10 @@ else
 endif
 
 clean: shutdown ##
-	rm -f RainFall.iso vm_def.xml
+	rm -rf vm_def.xml e_tmp executables
+
+fclean: clean ## hardcore clean
+	rm -rf RainFall.iso
 
 help: ## Show this help.
 	@perl -e '$(HELP_FUN)' $(MAKEFILE_LIST)
