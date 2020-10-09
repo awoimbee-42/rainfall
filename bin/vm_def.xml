@@ -1,8 +1,8 @@
 <domain type="kvm">
   <name>rainfall</name>
   <uuid>45ab5152-0295-11eb-adc1-0242ac120002</uuid>
-  <memory unit="MiB">512</memory>
-  <currentMemory unit="MiB">512</currentMemory>
+  <memory unit="MiB">256</memory>
+  <currentMemory unit="MiB">256</currentMemory>
   <vcpu placement="static">1</vcpu>
   <os>
     <type arch="x86_64" machine="pc-i440fx-5.0">hvm</type>

