@@ -1,35 +1,41 @@
+ifeq ($(tmpdir),)
+location = $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+self := $(location)
+.PHONY: all
+all: help
+%:
+	@tmpdir=`mktemp --tmpdir -d`; \
+	trap 'rm -rf "$$tmpdir"' EXIT; \
+	$(MAKE) -f $(self) --no-print-directory tmpdir=$$tmpdir $@
+else
+
 RainFall.iso:
 	./bin/fetch_iso.sh
 
 vm_def.xml:
 	sed "s|%%RAINFALL_ISO%%|$${PWD}/RainFall.iso|" bin/vm_def.xml > $@
 
-define dl_exe_from_vm
-	pass=$$(cat ./$(1)$$(expr $(2) - 1)/flag || echo level0)	\
-	&& echo "user: '$(1)$(2)'  pass: '$$pass'" \
-	&& sshpass -p "$$pass" rsync -r --progress -e 'ssh -p 4242' '$(1)$(2)@192.168.122.237:~/*' "$(3)"
-endef
+executables:
+	mkdir executables || true
 
-executables: $(wildcard level*/flag) $(wildcard bonus*/flag)
-	mkdir e_tmp 2>/dev/null || rm -rf e_tmp && mkdir e_tmp
-	$(call dl_exe_from_vm,level,0,e_tmp)
-	$(call dl_exe_from_vm,level,1,e_tmp)
-	$(call dl_exe_from_vm,level,2,e_tmp)
-	# $(call dl_exe_from_vm,level,3,e_tmp)
-	# $(call dl_exe_from_vm,level,4,e_tmp)
-	# $(call dl_exe_from_vm,level,5,e_tmp)
-	# $(call dl_exe_from_vm,level,6,e_tmp)
-	# $(call dl_exe_from_vm,level,7,e_tmp)
-	# $(call dl_exe_from_vm,level,8,e_tmp)
-	# $(call dl_exe_from_vm,level,9,e_tmp)
-	mv e_tmp executables
+executables/%: | executables
+	@nb=$$(echo $* | sed 's|[a-z]*||') \
+	&& str=$$(echo $* | sed 's|\([a-z]*\)[0-9]*|\1|') \
+	&& pass=$$(cat ./$${str}$$(expr $${nb} - 1)/flag || echo level0) \
+	&& echo "echo $$pass" > $(tmpdir)/$* && chmod +x $(tmpdir)/$* \
+	&& echo "Copying files from $* ($$pass)" \
+	&& SSH_ASKPASS="$(tmpdir)/$*" setsid scp -P 4242 '$*@192.168.122.237:~/*' "executables" 2>/dev/null
+
+EXECUTABLES := $(addprefix executables/, $(shell printf 'level%d ' {0..10})) #$(shell printf 'bonus%d' {0..10})
+
+extract_exes: $(EXECUTABLES) ## Extract all the important files from the VM
 
 .PHONY:	header start ip stop shutdown shutdown-hard list-vm network clean fclean help
 
 header:
 	toilet -w 9999 -f mono12 'level X'
 
-start: vm_def.xml RainFall.iso ## start the vm and print its IP
+start: vm_def.xml RainFall.iso ## Start the vm and print its IP
 	sudo virsh create ./vm_def.xml
 	sudo virsh list
 	@$(MAKE) ip
@@ -37,25 +43,27 @@ start: vm_def.xml RainFall.iso ## start the vm and print its IP
 ip: ## Prints the ip
 	sudo virsh net-dhcp-leases default | grep RainFall || echo "VM doesn't have an IP (yet ?)"
 
-stop: shutdown ## shutdown alias
+stop: shutdown ## Shutdown alias
 
-shutdown: shutdown-hard ## shutdown and delete vm
-#	sudo virsh shutdown rainfall
+shutdown: shutdown-hard ## Shutdown and delete vm
 
 shutdown-hard:
 	sudo virsh destroy rainfall
 
-list-vm: ## To see if the vm is running
+list-vm: ## See if the vm is running
 	sudo virsh list --all
 
 network: ## Can fix network issues with the VM
-ifeq ($(shell sudo virsh net-list | grep default),)
-	sudo virsh net-define bin/network_def.xml || true
-	sudo virsh net-autostart default || true
-	sudo virsh net-start default
-else
-	@echo 'Nothing to be done here !'
-endif
+	@command -V dnsmasq
+	@command -V ebtables
+	@command -V virsh
+	if [ "$$(sudo virsh net-list | grep default)" ]; then \
+		echo 'Nothing to be done here !'; \
+	else \
+		sudo virsh net-define bin/network_def.xml || true; \
+		sudo virsh net-autostart default || true; \
+		sudo virsh net-start default; \
+	fi
 
 clean: shutdown ##
 	rm -rf vm_def.xml e_tmp executables
@@ -88,3 +96,5 @@ HELP_FUN = %help; \
 	print " ${YELLOW}$$_->[0]${RESET}$$sep${GREEN}$$_->[1]${RESET}\n"; \
 	}; \
 	print "\n"; }
+
+endif
