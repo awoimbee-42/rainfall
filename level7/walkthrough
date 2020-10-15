@@ -6,6 +6,11 @@
    ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄               ██
     ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀              ▀▀
 
+The program:
+- An unused m() function that prints the global string 'c'
+- main() populates 'c' but doesn't print it
+see source.c
+
 Theory:
 In the first call to strcpy(), update p2[1] so that the second call to strcpy() replaces the call to puts() by a call to m().
 
