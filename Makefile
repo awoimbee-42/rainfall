@@ -31,6 +31,8 @@ executables/recreated: | executables
 executables/extracted: | executables
 	mkdir executables/extracted || true
 
+executables/recreated/level9: level9/source.cpp | executables/recreated
+	g++ -m32 $< -o $@
 executables/recreated/%: %/source.c | executables/recreated
 	gcc -m32 $*/source.c -o $@
 executables/extracted/%: | executables/extracted

