@@ -20,25 +20,20 @@ vm_def.xml:
 	sed "s|%%RAINFALL_ISO%%|$${PWD}/RainFall.iso|" bin/vm_def.xml > $@
 
 EXE = $(shell printf 'level%d ' {0..9}) $(shell printf 'bonus%d ' {0..3})
-EXE_RECREATED = $(addsuffix _recreated, $(EXE))
-EXECUTABLES := $(addprefix executables/, $(EXE) $(EXE_RECREATED))
+EXE_RECREATED = $(addprefix recreated/, $(EXE))
+EXE_EXTRACTED = $(addprefix extracted/, $(EXE))
+EXECUTABLES := $(addprefix executables/, $(EXE_EXTRACTED) $(EXE_RECREATED))
 
 executables:
 	mkdir executables || true
+executables/recreated: | executables
+	mkdir executables/recreated || true
+executables/extracted: | executables
+	mkdir executables/extracted || true
 
-executables/%_recreated: | executables
+executables/recreated/%: %/source.c | executables/recreated
 	gcc -m32 $*/source.c -o $@
-
-define set_pass
-if [ "$(1)$(2)" = "level0" ]; \
-then echo "level0"; \
-elif [ "$(1)$(2)" = "bonus0" ]; \
-then echo $$(cat ./level9/flag 2>/dev/null || true) \
-else echo $$(cat ./$(1)$$(expr $(2) - 1)/flag 2>/dev/null || true); \
-fi
-endef
-
-executables/%: | executables
+executables/extracted/%: | executables/extracted
 	@get_pass() { \
 		if [ "$$1$$2" = "level0" ]; then \
 			echo "level0"; \
@@ -54,7 +49,7 @@ executables/%: | executables
 	&& if [[ -z "$$pass" ]]; then echo "Flag for $* not present" && exit; fi \
 	&& echo "Copying files from $* ($$pass)" \
 	&& echo "echo $$pass" > mkftmp-$* && chmod +x mkftmp-$* \
-	&& SSH_ASKPASS="$(CURDIR)/mkftmp-$*" setsid scp -P 4242 '$*@192.168.122.237:~/*' "executables" 2>/dev/null \
+	&& SSH_ASKPASS="$(CURDIR)/mkftmp-$*" setsid scp -P 4242 '$*@192.168.122.237:~/*' "executables/extracted" 2>/dev/null \
 	&& rm mkftmp-$*
 
 .PHONY: extract_exes header start ip stop shutdown shutdown-hard list-vm network clean fclean help
