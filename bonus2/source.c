@@ -49,8 +49,8 @@ int_t main(int ac, char *av[])
 	}
 
 	memset(buf0, 0, 76);
-	strncpy(buf0, av[1], 40);
-	strncpy(buf1, av[2], 32);
+	strncpy(buf0, av[1], 40); // not always null-terminated
+	strncpy(buf1, av[2], 32); // not always null-terminated
 	env_lang = getenv("LANG");
 	if (env_lang != NULL) {
 		if (memcmp(env_lang, lang_str_fi, 2) == 0) {

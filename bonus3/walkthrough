@@ -9,13 +9,13 @@
 Like before, we start by disassembling the program and recreating the original code.
 
 This executable tries to lead us in the wrong direction:
-The password is read, it is in memory, waiting to be read through gdb
+The password is read, it is in memory, waiting to be read through gdb.
 
 But let's cut through the bullshit and pursue the true goal: execl("/bin/sh", "sh", 0);
 
 We need `strcmp(password, av[1]) == 0`, knowing `password[atoi(av[1])] = 0`
 Well, atoi("") == 0 and "" == "" ;)
 
-./bonus3 ''
+bonus3@RainFall:~$ ./bonus3 ''
 $ cat /home/user/end/.pass
 3321b6f81659f9a71c76616f606e4b50189cecfea611393d5d649f75e157353c

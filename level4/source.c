@@ -3,9 +3,9 @@
 
 int m;
 
-void p(char *param_1)
+void p(char *fmt)
 {
-	printf(param_1);
+	printf(fmt);
 	return;
 }
 

